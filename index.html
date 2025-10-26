@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Particle Universe — PezzaliAPP Cosmos</title>
+  <meta name="theme-color" content="#060a12">
+  <meta name="description" content="Milioni di particelle che formano figure e reagiscono al suono o al tocco. WebGPU se disponibile, fallback compatibile.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img class="logo" src="icons/icon-192.png" alt="logo">
+      <h1>Particle Universe</h1>
+      <span class="edition">— PezzaliAPP Cosmos</span>
+    </div>
+    <nav class="actions">
+      <button id="btnPlay" title="Play/Pausa" aria-label="Play/Pausa">▶︎</button>
+      <button id="btnMic" title="Audio Reactive" aria-label="Audio Reactive">🎤</button>
+      <button id="btnMode" title="Cambia figura" aria-label="Cambia figura">✦</button>
+      <button id="btnTheme" title="Tema" aria-label="Tema">⬚</button>
+      <button id="btnFullscreen" title="Schermo intero" aria-label="Schermo intero">⛶</button>
+      <button id="btnInstall" title="Installa PWA" aria-label="Installa PWA">＋</button>
+    </nav>
+  </header>
+
+  <main>
+    <canvas id="view"></canvas>
+    <section id="hud">
+      <div class="chip"><b>RENDER</b> <span id="backend">detect…</span></div>
+      <div class="chip"><b>PART</b> <span id="part">—</span></div>
+      <div class="chip"><b>FPS</b> <span id="fps">—</span></div>
+      <div class="chip"><b>MODE</b> <span id="modeName">Galaxy</span></div>
+    </section>
+    <section id="help">
+      Tocca e trascina per attrarre le particelle. Doppio tap cambia figura. 🎤 attiva il microfono per l’audio-reactive.
+    </section>
+  </main>
+
+  <footer>
+    <small>© 2025 pezzaliAPP — MIT License. <a href="./readme.html">Readme</a></small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

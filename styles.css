@@ -1,0 +1,45 @@
+:root{
+  --bg:#060a12; --ink:#eaf1ff; --muted:#9fb2d7; --glass:#0b1533aa; --line:#1b2a55; --cta:#2dd4bf;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  color:var(--ink);
+  background: radial-gradient(1000px 600px at 50% -10%, #0d1a30, var(--bg));
+  overflow:hidden;
+}
+header{
+  position:fixed; top:0; left:0; right:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 10px; gap:8px;
+  background:linear-gradient(180deg,#0b1533cc,#0b153388);
+  backdrop-filter: blur(6px);
+  border-bottom:1px solid var(--line);
+  z-index:10;
+}
+.brand{display:flex; align-items:center; gap:8px; white-space:nowrap}
+.brand .logo{width:24px;height:24px;border-radius:6px}
+.brand h1{font-size:16px; margin:0}
+.brand .edition{opacity:.8; font-size:13px}
+.actions{display:flex; gap:6px}
+.actions button{
+  background:#0f1a3acc; color:var(--ink); border:1px solid var(--line);
+  border-radius:10px; padding:6px 10px; cursor:pointer;
+}
+.actions button:active{transform:translateY(1px)}
+main{height:100vh; display:grid; grid-template-rows: 1fr auto;}
+#view{width:100vw; height:100vh; display:block; touch-action:none}
+#hud{
+  position:fixed; left:10px; bottom:44px; display:flex; gap:8px; z-index:5;
+}
+.chip{background:var(--glass); border:1px solid var(--line); padding:6px 10px; border-radius:999px}
+#help{
+  position:fixed; bottom:8px; left:50%; transform:translateX(-50%);
+  background:var(--glass); border:1px solid var(--line);
+  padding:6px 10px; border-radius:999px; z-index:5; font-size:13px; color:var(--muted);
+}
+footer{
+  position:fixed; right:8px; top:8px; z-index:5; color:var(--muted); background:transparent;
+}
+a{color:var(--cta)}
