@@ -1,5 +1,5 @@
-// Minimal offline cache for Particle Universe — PezzaliAPP Cosmos
-const CACHE = 'particle-universe-v1';
+// Offline cache (HTTPS/localhost only)
+const CACHE = 'particle-universe-lite-v1';
 const ASSETS = [
   './',
   './index.html',

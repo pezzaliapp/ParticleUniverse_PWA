@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-  <title>Particle Universe — PezzaliAPP Cosmos</title>
+  <title>Particle Universe — LITE (Canvas)</title>
   <meta name="theme-color" content="#060a12">
-  <meta name="description" content="Milioni di particelle che formano figure e reagiscono al suono o al tocco. WebGPU se disponibile, fallback compatibile.">
+  <meta name="description" content="Showcase particellare Canvas-only, compatibile ovunque.">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
@@ -15,7 +15,7 @@
     <div class="brand">
       <img class="logo" src="icons/icon-192.png" alt="logo">
       <h1>Particle Universe</h1>
-      <span class="edition">— PezzaliAPP Cosmos</span>
+      <span class="edition">— LITE (Canvas)</span>
     </div>
     <nav class="actions">
       <button id="btnPlay" title="Play/Pausa" aria-label="Play/Pausa">▶︎</button>
@@ -30,13 +30,13 @@
   <main>
     <canvas id="view"></canvas>
     <section id="hud">
-      <div class="chip"><b>RENDER</b> <span id="backend">detect…</span></div>
+      <div class="chip"><b>RENDER</b> <span id="backend">Canvas2D</span></div>
       <div class="chip"><b>PART</b> <span id="part">—</span></div>
       <div class="chip"><b>FPS</b> <span id="fps">—</span></div>
       <div class="chip"><b>MODE</b> <span id="modeName">Galaxy</span></div>
     </section>
     <section id="help">
-      Tocca e trascina per attrarre le particelle. Doppio tap cambia figura. 🎤 attiva il microfono per l’audio-reactive.
+      Funziona ovunque. Trascina per attrarre. Doppio tap cambia figura. 🎤 attiva microfono (opzionale).
     </section>
   </main>
 

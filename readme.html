@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Particle Universe — Readme</title>
+<title>Particle Universe — LITE Readme</title>
 <style>
   body{margin:0;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#060a12;color:#eaf1ff}
   main{max-width:940px;margin:0 auto;padding:20px}
@@ -15,25 +15,19 @@
 </head>
 <body>
 <main>
-  <h1>Particle Universe — PezzaliAPP Cosmos</h1>
-  <p>Showcase WebGPU con fino a <b>0.5–1M di particelle</b>. Fallback Canvas2D “lite” automatico, PWA offline-ready.</p>
+  <h1>Particle Universe — LITE (Canvas)</h1>
+  <p>Versione Canvas-only, pensata per essere <b>impossibile da rompere</b> e compatibile ovunque (anche aprendo il file direttamente).</p>
   <section>
     <h2>Controlli</h2>
     <ul>
-      <li><b>Tocco &amp; trascina</b>: attrattore</li>
-      <li><b>Doppio tap</b>: cambia figura (Galaxy/Ring/Sphere/Spiral/Waves)</li>
-      <li><b>🎤</b>: attiva microfono per audio-reactive (banda 100–2k Hz)</li>
-      <li><b>⛶</b>: schermo intero</li>
-      <li><b>＋</b>: installa come PWA</li>
+      <li><b>Drag</b>: attrattore</li>
+      <li><b>Double tap</b>: cambia figura (Galaxy/Ring/Sphere/Spiral/Waves)</li>
+      <li><b>🎤</b> opzionale: audio-reactive</li>
     </ul>
   </section>
   <section>
-    <h2>Compatibilità</h2>
-    <p><b>WebGPU</b> quando disponibile (browser moderni). In assenza, parte la versione <b>Canvas2D</b> con 10–60k particelle, fluida su iPhone/iPad.</p>
-  </section>
-  <section>
-    <h2>Licenza &amp; Note</h2>
-    <p>MIT License — © 2025 pezzaliAPP. Nessuna dipendenza esterna. Colori e figure personalizzabili in <code>app.js</code>.</p>
+    <h2>Note</h2>
+    <p>Se vuoi l'offline vero: pubblica su <b>GitHub Pages (HTTPS)</b> oppure apri con un server locale (es. <code>python -m http.server</code>). Il service worker non si attiva in <code>file://</code> per sicurezza.</p>
   </section>
 </main>
 </body>
