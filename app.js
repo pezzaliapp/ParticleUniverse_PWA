@@ -6,7 +6,9 @@
   'use strict';
 
   const canvas = document.getElementById('view');
+  const ctx = canvas.getContext('2d');          // <- CONTEXT subito
   const DPR = Math.min(2, (window.devicePixelRatio||1));
+
   let W=0,H=0, running=true;
   const elPart = document.getElementById('part');
   const elFps = document.getElementById('fps');
@@ -22,12 +24,10 @@
   let modeIndex = 0;
 
   let audioLevel=0, analyser=null, dataArray=null, micStream=null;
-
   let frames=0, last=performance.now(), lastFps=last, fps=0;
 
-  // --- FULLSCREEN RESIZE FIX ---
+  // --- FULLSCREEN + DPR FIX ---
   function resize(){
-    // occorre lasciare spazio a header/footer e forzare il canvas in posizione fissa
     const header = document.querySelector('header');
     const footer = document.querySelector('footer');
     const headerH = header ? header.offsetHeight : 0;
@@ -42,16 +42,18 @@
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
 
+    // bitmap in device pixels
     canvas.width  = Math.floor(W * DPR);
     canvas.height = Math.floor(H * DPR);
+
+    // importantissimo: disegna in coordinate CSS px
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
-  // su alcuni browser il layout si stabilizza con un piccolo delay
   const queuedResize = () => setTimeout(resize, 100);
   window.addEventListener('resize', queuedResize, {passive:true});
   window.addEventListener('orientationchange', () => setTimeout(resize, 200));
-  // chiamata iniziale (due volte per sicurezza su macOS/iOS)
   resize(); setTimeout(resize, 0);
-  // --- /FULLSCREEN RESIZE FIX ---
+  // --- /FIX ---
 
   // Input
   let touch = {active:false, x:0.5, y:0.5};
@@ -90,7 +92,7 @@
   function cycleTheme(){ themeIndex=(themeIndex+1)%THEMES.length; applyTheme(); }
   applyTheme();
 
-  // Audio (opzionale, non blocca)
+  // Audio (opzionale)
   async function toggleMic(){
     if(micStream){
       micStream.getTracks().forEach(t=>t.stop()); micStream=null; analyser=null; dataArray=null;
@@ -116,8 +118,7 @@
     audioLevel = Math.min(1, (sum/(n*255))*1.8);
   }
 
-  // Canvas renderer
-  const ctx = canvas.getContext('2d');
+  // Particelle (create dopo il primo resize)
   const COUNT = Math.min(60000, Math.floor((W*H)/5)); // scala con pixel
   const P = new Float32Array(COUNT*4); // x,y,vx,vy
   for(let i=0;i<COUNT;i++){
@@ -183,6 +184,7 @@
       if(y<0) y+=H; if(y>=H) y-=H;
       P[idx]=x; P[idx+1]=y; P[idx+2]=vx; P[idx+3]=vy;
     }
+
     // draw
     const A = THEMES[themeIndex].a, B = THEMES[themeIndex].b, C = THEMES[themeIndex].c;
     ctx.globalCompositeOperation='lighter';
