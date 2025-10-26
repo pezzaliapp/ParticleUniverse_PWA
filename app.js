@@ -25,16 +25,33 @@
 
   let frames=0, last=performance.now(), lastFps=last, fps=0;
 
+  // --- FULLSCREEN RESIZE FIX ---
   function resize(){
-    W = Math.floor(window.innerWidth);
-    H = Math.floor(window.innerHeight);
-    canvas.width = Math.floor(W*DPR);
-    canvas.height = Math.floor(H*DPR);
-    canvas.style.width = W+'px';
-    canvas.style.height = H+'px';
+    // occorre lasciare spazio a header/footer e forzare il canvas in posizione fissa
+    const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
+    const headerH = header ? header.offsetHeight : 0;
+    const footerH = footer ? footer.offsetHeight : 0;
+
+    W = window.innerWidth;
+    H = Math.max(0, window.innerHeight - headerH - footerH);
+
+    canvas.style.position = 'fixed';
+    canvas.style.top = headerH + 'px';
+    canvas.style.left = '0';
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+
+    canvas.width  = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
   }
-  window.addEventListener('resize', resize, {passive:true});
-  resize();
+  // su alcuni browser il layout si stabilizza con un piccolo delay
+  const queuedResize = () => setTimeout(resize, 100);
+  window.addEventListener('resize', queuedResize, {passive:true});
+  window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+  // chiamata iniziale (due volte per sicurezza su macOS/iOS)
+  resize(); setTimeout(resize, 0);
+  // --- /FULLSCREEN RESIZE FIX ---
 
   // Input
   let touch = {active:false, x:0.5, y:0.5};
