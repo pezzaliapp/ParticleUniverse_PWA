@@ -1,4 +1,4 @@
-/* Particle Universe — PezzaliAPP Cosmos
+/* Particle Universe — PezzaliAPP Cosmos (FIXED)
  * WebGPU (se disponibile) con milioni di particelle, fallback Canvas2D "lite".
  * Audio-reactive con Web Audio API. PWA offline.
  * MIT 2025
@@ -9,7 +9,6 @@
   const canvas = document.getElementById('view');
   const DPR = Math.min(2, (window.devicePixelRatio||1));
   let W=0,H=0, running=true;
-  let backend = 'detecting', partCount = 0;
   const elBackend = document.getElementById('backend');
   const elPart = document.getElementById('part');
   const elFps = document.getElementById('fps');
@@ -24,8 +23,7 @@
   const MODES = ['Galaxy','Ring','Sphere','Spiral','Waves'];
   let modeIndex = 0;
 
-  let audioEnabled=false, audioLevel=0;
-  let micStream=null, analyser=null, dataArray=null;
+  let audioLevel=0, analyser=null, dataArray=null, micStream=null;
 
   let frames=0, last=performance.now(), lastFps=last, fps=0;
 
@@ -58,8 +56,8 @@
   elThemeBtn.addEventListener('click', cycleTheme);
   elFullscreen.addEventListener('click', ()=>{
     const elem = document.documentElement;
-    if(!document.fullscreenElement){ if(elem.requestFullscreen) elem.requestFullscreen(); }
-    else { if(document.exitFullscreen) document.exitFullscreen();}
+    if(!document.fullscreenElement){ elem.requestFullscreen && elem.requestFullscreen(); }
+    else { document.exitFullscreen && document.exitFullscreen(); }
   });
   let deferredPrompt=null;
   window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt=e; elInstall.style.display='inline-block'; });
@@ -73,98 +71,77 @@
     {bg:'#08130f', a:'#7bffd4', b:'#37f0a4', c:'#60a5fa'},
   ];
   let themeIndex=0;
-  function applyTheme(){
-    document.documentElement.style.setProperty('--bg', THEMES[themeIndex].bg);
-  }
+  function applyTheme(){ document.documentElement.style.setProperty('--bg', THEMES[themeIndex].bg); }
   function cycleTheme(){ themeIndex=(themeIndex+1)%THEMES.length; applyTheme(); }
   applyTheme();
 
   // Audio
   async function toggleMic(){
-    if(audioEnabled){
-      audioEnabled=false;
+    if(micStream){
+      micStream.getTracks().forEach(t=>t.stop()); micStream=null; analyser=null; dataArray=null;
       elMic.textContent='🎤';
-      if(micStream){ micStream.getTracks().forEach(t=>t.stop()); micStream=null; }
-      analyser=null; dataArray=null;
-    } else {
-      try{
-        micStream = await navigator.mediaDevices.getUserMedia({audio:true});
-        const ac = new (window.AudioContext||window.webkitAudioContext)();
-        const src = ac.createMediaStreamSource(micStream);
-        analyser = ac.createAnalyser();
-        analyser.fftSize = 512;
-        dataArray = new Uint8Array(analyser.frequencyBinCount);
-        src.connect(analyser);
-        audioEnabled=true;
-        elMic.textContent='🎤 ON';
-      }catch(err){
-        console.warn('Mic denied', err);
-      }
+      return;
     }
+    try{
+      micStream = await navigator.mediaDevices.getUserMedia({audio:true});
+      const ac = new (window.AudioContext||window.webkitAudioContext)();
+      const src = ac.createMediaStreamSource(micStream);
+      analyser = ac.createAnalyser(); analyser.fftSize=512;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      src.connect(analyser);
+      elMic.textContent='🎤 ON';
+    }catch(err){ console.warn('Mic denied', err); }
   }
   elMic.addEventListener('click', toggleMic);
-
   function sampleAudio(){
-    if(analyser && dataArray){
-      analyser.getByteFrequencyData(dataArray);
-      // Focus su banda 100–2k Hz
-      let sum=0, n=0;
-      for(let i=4;i<40 && i<dataArray.length;i++){ sum+=dataArray[i]; n++; }
-      const v = (sum/(n*255));
-      audioLevel = Math.min(1, v*1.8);
-    } else {
-      audioLevel = 0.0;
-    }
+    if(!analyser || !dataArray){ audioLevel=0; return; }
+    analyser.getByteFrequencyData(dataArray);
+    let sum=0, n=0;
+    for(let i=4;i<40 && i<dataArray.length;i++){ sum+=dataArray[i]; n++; }
+    audioLevel = Math.min(1, (sum/(n*255))*1.8);
   }
 
   // RENDERERS
-  let renderer=null;
   (async function init(){
     if(navigator.gpu){
       try{
-        renderer = await initWebGPU();
-      }catch(e){
-        console.warn('WebGPU failed, fallback', e);
-      }
+        const r = await initWebGPU();
+        elBackend.textContent = r.backend; elPart.textContent = String(r.count);
+        return;
+      }catch(e){ console.warn('WebGPU failed, fallback', e); }
     }
-    if(!renderer){
-      renderer = initCanvasFallback();
-    }
-    backend = renderer.backend;
-    partCount = renderer.count;
-    elBackend.textContent = backend;
-    elPart.textContent = String(partCount);
-    loop();
+    const r = initCanvasFallback();
+    elBackend.textContent = r.backend; elPart.textContent = String(r.count);
   })();
 
-  // WebGPU IMPLEMENTATION (compute + render)
+  // WebGPU (compute + render)
   async function initWebGPU(){
     const adapter = await navigator.gpu.requestAdapter();
+    if(!adapter) throw new Error('No WebGPU adapter');
     const device = await adapter.requestDevice();
     const ctx = canvas.getContext('webgpu');
     const format = navigator.gpu.getPreferredCanvasFormat();
     ctx.configure({device, format, alphaMode:'opaque'});
 
-    const COUNT = 1000000; // 1M
-    const BUF_SIZE = COUNT*4*4; // vec4f
-    const posBuf = device.createBuffer({size:BUF_SIZE, usage:GPUBufferUsage.STORAGE|GPUBufferUsage.VERTEX|GPUBufferUsage.COPY_DST});
+    const COUNT = 500_000; // 0.5M default (scalable)
+    const BUF_SIZE = COUNT*4*4;
+    const posBuf = device.createBuffer({size:BUF_SIZE, usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
     const velBuf = device.createBuffer({size:BUF_SIZE, usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-
-    // Seed
+    // seed
     {
       const seed = new Float32Array(COUNT*4);
       const vseed = new Float32Array(COUNT*4);
       for(let i=0;i<COUNT;i++){
         const a = Math.random()*Math.PI*2;
         const r = Math.sqrt(Math.random())*0.45;
-        seed[i*4+0] = (Math.cos(a)*r);
-        seed[i*4+1] = (Math.sin(a)*r);
-        seed[i*4+2] = (Math.random()*2-1)*0.02;
+        seed[i*4+0] = Math.cos(a)*r;
+        seed[i*4+1] = Math.sin(a)*r;
+        seed[i*4+2] = 0;
         seed[i*4+3] = Math.random()*Math.PI*2;
-        vseed[i*4+0] = 0.0; vseed[i*4+1] = 0.0; vseed[i*4+2] = 0.0; vseed[i*4+3] = 0.0;
+        vseed[i*4+0]=0; vseed[i*4+1]=0; vseed[i*4+2]=0; vseed[i*4+3]=0;
       }
-      device.queue.writeBuffer(posBuf,0,seed.buffer);
-      device.queue.writeBuffer(velBuf,0,vseed.buffer);
+      device.queue.writeBuffer(posBuf,0,seed);
+      device.queue.writeBuffer(velBuf,0,vseed);
     }
 
     const uniformBuf = device.createBuffer({size: 4*8, usage: GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
@@ -172,8 +149,8 @@
     const compMod = device.createShaderModule({code:`
 struct Part { p: vec4f; v: vec4f; };
 @group(0) @binding(0) var<storage, read_write> pos: array<Part>;
-@group(0) @binding(1) var<uniform> U: vec4f;
-@group(0) @binding(2) var<uniform> U2: vec4f;
+@group(0) @binding(1) var<uniform> U: vec4f; // time, dt, aspect, mode
+@group(0) @binding(2) var<uniform> U2: vec4f; // touchx, touchy, audio, _
 fn hash(n: f32) -> f32 { return fract(sin(n)*43758.5453); }
 fn noise(p: vec2f) -> f32 {
   let i = floor(p); let f = fract(p);
@@ -237,7 +214,6 @@ fn main(@builtin(global_invocation_id) gid: vec3u){
     const vertMod = device.createShaderModule({code:`
 struct Part { p: vec4f; v: vec4f; };
 @group(0) @binding(0) var<storage, read> pos: array<Part>;
-@group(0) @binding(1) var<uniform> U: vec4f;
 struct VSOut { @builtin(position) pos: vec4f, @location(0) t: f32; };
 @vertex
 fn main(@builtin(instance_index) i: u32) -> VSOut{
@@ -248,11 +224,10 @@ fn main(@builtin(instance_index) i: u32) -> VSOut{
   return out;
 }`});
     const fragMod = device.createShaderModule({code:`
-@group(0) @binding(2) var<uniform> Col: vec4f;
 @fragment
 fn main(@location(0) t: f32) -> @location(0) vec4f{
   let glow = 0.9 - abs(t-0.5);
-  let col = mix(vec3f(Col.x, Col.y, Col.z), vec3f(1.0,1.0,1.0), glow*0.2);
+  let col = mix(vec3f(0.49, 0.82, 1.0), vec3f(1.0,1.0,1.0), glow*0.2);
   return vec4f(col, 0.75);
 }`});
 
@@ -282,32 +257,22 @@ fn main(@location(0) t: f32) -> @location(0) vec4f{
       ]
     });
 
-    function hexToRgb(h){ const x=parseInt(h.slice(1),16); return [(x>>16&255)/255,(x>>8&255)/255,(x&255)/255]; }
-
     function frame(){
       if(!running){ requestAnimationFrame(frame); return; }
       const now = performance.now();
       const dt = Math.min(0.033, (now-last)/1000);
       last = now;
       frames++;
-      if(now-lastFps>500){
-        fps = Math.round(frames*1000/(now-lastFps));
-        frames=0; lastFps=now;
-        elFps.textContent = String(fps);
-      }
+      if(now-lastFps>500){ fps = Math.round(frames*1000/(now-lastFps)); frames=0; lastFps=now; elFps.textContent = String(fps); }
       sampleAudio();
 
       const time = now*0.001;
       const aspect = W/H;
       const u = new Float32Array([time, dt, aspect, modeIndex]);
       const u2 = new Float32Array([touch.x, touch.y, audioLevel, 0]);
-      const c = hexToRgb(THEMES[themeIndex].a);
-      const col = new Float32Array([c[0], c[1], c[2], 1]);
       const encoder = device.createCommandEncoder();
-      const queue = device.queue;
-      queue.writeBuffer(uniformBuf, 0, u.buffer);
-      queue.writeBuffer(uniformBuf, 16, u2.buffer);
-      queue.writeBuffer(uniformBuf, 32, col.buffer);
+      device.queue.writeBuffer(uniformBuf, 0, u);
+      device.queue.writeBuffer(uniformBuf, 16, u2);
 
       { const pass = encoder.beginComputePass(); pass.setPipeline(pipelineCompute); pass.setBindGroup(0, bindCompute); pass.dispatchWorkgroups(Math.ceil(COUNT/256)); pass.end(); }
       {
@@ -326,7 +291,7 @@ fn main(@location(0) t: f32) -> @location(0) vec4f{
     return { backend:'WebGPU', count:COUNT };
   }
 
-  // Canvas2D FALLBACK
+  // Canvas2D fallback (fixed syntax)
   function initCanvasFallback(){
     const ctx = canvas.getContext('2d');
     const COUNT = Math.min(60000, Math.floor((W*H)/5));
@@ -337,25 +302,18 @@ fn main(@location(0) t: f32) -> @location(0) vec4f{
       P[i*4+2] = (Math.random()*2-1)*0.2;
       P[i*4+3] = (Math.random()*2-1)*0.2;
     }
-    function hex(h){ return [int(h[1:3],16),int(h[3:5],16),int(h[5:7],16)] }
     function frame(){
       if(!running){ requestAnimationFrame(frame); return; }
       const now = performance.now();
       const dt = Math.min(0.033, (now-last)/1000);
       last = now;
       frames++;
-      if(now-lastFps>500){
-        fps = Math.round(frames*1000/(now-lastFps));
-        frames=0; lastFps=now;
-        elFps.textContent = String(fps);
-      }
+      if(now-lastFps>500){ fps = Math.round(frames*1000/(now-lastFps)); frames=0; lastFps=now; elFps.textContent = String(fps); }
       sampleAudio();
 
       ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#060a12';
       ctx.fillRect(0,0,W,H);
 
-      const col = THEMES[themeIndex];
-      // physics
       const boost = 1 + audioLevel*1.5;
       for(let i=0;i<COUNT;i++){
         const idx=i*4;
@@ -417,8 +375,6 @@ fn main(@location(0) t: f32) -> @location(0) vec4f{
     requestAnimationFrame(frame);
     return { backend:'Canvas2D (Lite)', count:COUNT };
   }
-
-  function loop(){ /* renderer has own loop */ }
 
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
